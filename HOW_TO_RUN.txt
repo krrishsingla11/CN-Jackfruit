@@ -1,0 +1,150 @@
+====================================================
+  RELIABLE GROUP NOTIFICATION SYSTEM
+  HOW TO RUN — DELIVERABLE 2
+====================================================
+
+REQUIREMENTS
+------------
+- Both computers on the SAME WiFi / hotspot
+- Python 3.8+ installed on both computers
+
+DELIVERABLE 2 — NEW FILES
+--------------------------
+  server.py        → Updated server with metrics, rate limiting, health tracking
+  perf_test.py     → Full performance benchmark (latency, throughput, scalability)
+  failure_test.py  → Failure scenario tests (disconnect, loss, bad input, flood)
+  HOW_TO_RUN.txt   → This file
+
+====================================================
+COMPUTER 1 — SERVER
+====================================================
+
+Step 1 — Open CMD / Terminal
+
+Step 2 — Go to project folder:
+    cd "path/to/CN_Submission_D2"
+
+Step 3 — Find your IP address:
+    Windows: ipconfig   (look for IPv4 under WiFi)
+    Linux/Mac: ip addr  or  ifconfig
+
+Step 4 — Allow firewall ports (Windows only, run as Administrator):
+    netsh advfirewall firewall add rule name="PORT55000" protocol=TCP dir=in localport=55000 action=allow
+    netsh advfirewall firewall add rule name="PORT55001" protocol=UDP dir=in localport=55001 action=allow
+    netsh advfirewall firewall add rule name="PORT55002" protocol=TCP dir=in localport=55002 action=allow
+
+Step 5 — Start the server:
+    python server.py
+
+You should see:
+    UDP listener on :55001
+    SSL control server on 0.0.0.0:55000
+    Metrics endpoint at http://0.0.0.0:55002/
+    admin>
+
+NEW ADMIN COMMANDS (Deliverable 2)
+-----------------------------------
+  notify <group> <message>    — notify one group
+  broadcast <message>         — notify ALL groups at once
+  list                        — show all subscribers per group
+  stats                       — delivery statistics (sent/acked/failed/retransmit)
+  kick <ip>:<port>            — forcibly remove a client (e.g. kick 127.0.0.1:54321)
+  quit                        — graceful shutdown
+
+====================================================
+COMPUTER 2 — CLIENT
+====================================================
+
+Step 1 — Copy the entire project folder to Computer 2
+
+Step 2 — Open CMD / Terminal, go to project folder
+
+Step 3 — Start the client (replace IP with Computer 1's IP):
+    python client.py --name Alice --host <SERVER_IP> --port 55000 --groups alerts critical
+
+====================================================
+SENDING NOTIFICATIONS (from Computer 1 admin prompt)
+====================================================
+
+Send to one group:
+    notify alerts "Fire alarm on floor 3!"
+
+Send to all groups at once:
+    broadcast "Emergency: evacuate building now!"
+
+View delivery stats:
+    stats
+
+Remove unresponsive client:
+    kick 192.168.1.5:54321
+
+====================================================
+DELIVERABLE 2 — PERFORMANCE TESTING
+====================================================
+
+Run on Computer 1 while server is running:
+
+  Basic benchmark:
+    python perf_test.py --host 127.0.0.1 --clients 10
+
+  With 30% simulated packet loss:
+    python perf_test.py --host 127.0.0.1 --clients 10 --loss 0.3
+
+  Output includes:
+    - SSL round-trip latency (mean, median, p95, p99)
+    - Packet build/parse throughput
+    - Best-effort vs Reliable UDP comparison
+    - Concurrent client scalability table
+    - Delivery rate under 0%, 10%, 30%, 50% packet loss
+
+====================================================
+DELIVERABLE 2 — FAILURE SCENARIO TESTING
+====================================================
+
+Run on Computer 1 while server is running:
+    python failure_test.py --host 127.0.0.1
+
+Tests run automatically:
+  1. Abrupt client disconnect
+  2. Malformed JSON control message
+  3. Plain TCP connection to TLS port (SSL handshake failure)
+  4. Unknown group name in subscribe
+  5. Duplicate subscription
+  6. Packet loss + retransmission detection
+  7. Rapid connect/disconnect flood (50 connections)
+  8. Subscribe without udp_port
+
+====================================================
+METRICS ENDPOINT (NEW in Deliverable 2)
+====================================================
+
+While server is running, open in browser or curl:
+    http://<SERVER_IP>:55002/
+
+Returns JSON with:
+  - total_sent, total_acked, total_failed, total_retransmit
+  - uptime_s
+  - group_sizes (subscribers per group)
+  - recent_notifications (last 10)
+
+Example:
+    curl http://127.0.0.1:55002/
+
+====================================================
+AVAILABLE GROUPS
+====================================================
+    alerts   → group id 1
+    updates  → group id 2
+    critical → group id 3
+
+====================================================
+FILES
+====================================================
+    server.py         → Run on Computer 1 (server) — updated D2
+    client.py         → Run on Computer 2 (client) — unchanged from D1
+    protocol.py       → Packet format — unchanged
+    certs/            → SSL certificates
+    perf_test.py      → Performance benchmark — updated D2
+    failure_test.py   → NEW: Failure scenario tests
+    test_system.py    → Original D1 automated tests
+    HOW_TO_RUN.txt    → This file
