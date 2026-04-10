@@ -1,6 +1,11 @@
 # Reliable Group Notification System
 **Project 18 — CN Jackfruit Mini Project**
 
+Team Members - 
+Krrish Singla - PES1UG24AM141
+Kshama - PES1UG24AM142
+Bilal - PES1UG24AM162
+
 A UDP-based group notification system that reliably delivers alerts to multiple subscribers with acknowledgement, retransmission, timeout handling, and direct messaging. All control communication is secured with SSL/TLS.
 
 ---
